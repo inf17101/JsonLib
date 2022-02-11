@@ -4,11 +4,14 @@
 #include <string>
 #include "JsonLiteral.h"
 
-struct Token
+namespace json
 {
-    std::string content_{};
-    JsonLiteral type_{JsonLiteral::NIL};
-    std::size_t position_{0};
-};
+    struct Token
+    {
+        std::string content_{};
+        JsonLiteral type_{JsonLiteral::NIL};
+        std::size_t position_{0};
+    };
+}
 
 #endif
