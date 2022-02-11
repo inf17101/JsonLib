@@ -18,7 +18,7 @@ namespace json
             std::vector<Token> tokens { token };
             while(token.type_ != JsonLiteral::JSON_EOF)
             {
-                token = lex(rawJson, token.position_);
+                token = lex(rawJson);
                 tokens.push_back(token);
             }
 
@@ -26,46 +26,43 @@ namespace json
         }
 
     private:
-        bool isEndOfJson(const std::string& rawJson, std::size_t position) const noexcept
+        bool isEndOfJson(const std::string& rawJson) const noexcept
         {
-            return position >= rawJson.length();
+            return position_ >= rawJson.length();
         }
 
-        bool notEndOfJson(const std::string& rawJson, std::size_t position) const noexcept
+        bool notEndOfJson(const std::string& rawJson) const noexcept
         {
-            return position < rawJson.length();
+            return position_ < rawJson.length();
         }
 
-        std::size_t skipSpaces(const std::string& rawJson, std::size_t position)
+        void skipSpaces(const std::string& rawJson)
         {
-            while(std::isspace(rawJson[position]) > 0 && notEndOfJson(rawJson, position))
-                position++;
-            return position;
+            while(std::isspace(rawJson[position_]) > 0 && notEndOfJson(rawJson))
+                position_++;
         }
 
-        Token lexString(const std::string& rawJson, std::size_t position)
+        Token lexString(const std::string& rawJson)
         {
             std::string buffer {};
-            while(rawJson[position] != '"' && notEndOfJson(rawJson, position))
+            while(rawJson[position_] != '"' && notEndOfJson(rawJson))
             {
-                buffer += rawJson[position];
-                position++;
+                buffer += rawJson[position_];
+                position_++;
             }
-            //std::cout << buffer << std::endl;
-            position++;
-            return { buffer, JsonLiteral::STRING, position };
+            position_++;
+            return { buffer, JsonLiteral::STRING, position_ };
         }
 
-        Token lexInteger(const std::string& rawJson, std::size_t position)
+        Token lexInteger(const std::string& rawJson)
         {
             std::string number {};
-            while (std::isdigit(rawJson[position]) > 0)
+            while (std::isdigit(rawJson[position_]) > 0)
             {
-                number += rawJson[position];
-                position++;
+                number += rawJson[position_];
+                position_++;
             }
-            //std::cout << number << std::endl;
-            return { number, JsonLiteral::INTEGER, position }; 
+            return { number, JsonLiteral::INTEGER, position_ }; 
         }
 
         inline bool isBooleanKeyword(const std::string& keyword) const noexcept
@@ -78,14 +75,14 @@ namespace json
             return keyword == "null";   
         }
 
-        Token checkKeyword(const std::string& keyword, std::size_t position) const noexcept
+        Token checkKeyword(const std::string& keyword) const noexcept
         {
             if(isBooleanKeyword(keyword))
-                return { keyword, JsonLiteral::BOOLEAN, position};
+                return { keyword, JsonLiteral::BOOLEAN, position_};
             else if(isNullKeyword(keyword))
-                return { keyword, JsonLiteral::NIL, position};
+                return { keyword, JsonLiteral::NIL, position_};
 
-            return { {}, JsonLiteral::ERROR, position};
+            return { {}, JsonLiteral::ERROR, position_};
         }
 
         inline bool notKeywordEnd(char indicator) const noexcept
@@ -98,43 +95,44 @@ namespace json
             return indicator == 't' || indicator == 'f' || indicator == 'n';
         }
 
-        auto lexKeyword(const std::string& rawJson, std::size_t position)
+        auto lexKeyword(const std::string& rawJson)
         {
             std::string keyword {};
-            if(isKeyword(rawJson[position]))
+            if(isKeyword(rawJson[position_]))
             {
-                while(notKeywordEnd(rawJson[position]) && notEndOfJson(rawJson, position))
+                while(notKeywordEnd(rawJson[position_]) && notEndOfJson(rawJson))
                 {
-                    keyword += rawJson[position];
-                    position++;
+                    keyword += rawJson[position_];
+                    position_++;
                 }
             }
-            //std::cout << keyword << std::endl;
-            return checkKeyword(keyword, position);
+            return checkKeyword(keyword);
         }
 
-        Token lex(const std::string& rawJson, std::size_t position = 0)
+        Token lex(const std::string& rawJson)
         {
-            position = skipSpaces(rawJson, position);
-            if(isEndOfJson(rawJson, position))
-                return Token{ {}, JsonLiteral::JSON_EOF, position };
+            skipSpaces(rawJson);
+            if(isEndOfJson(rawJson))
+                return Token{ {}, JsonLiteral::JSON_EOF, position_ };
 
-            switch(rawJson[position])
+            switch(rawJson[position_])
             {
-                case '"': return lexString(rawJson, ++position);
+                case '"': position_++; return lexString(rawJson);
                 case '0': case '1': case '2': case '3': case '4': 
                 case '5': case '6': case '7': case '8': 
-                case '9': return lexInteger(rawJson, position);
-                case '{': return { {}, JsonLiteral::OPEN_CURLY_BRACE, ++position };
-                case '}': return { {}, JsonLiteral::CLOSED_CURLY_BRACE, ++position };
-                case '[': return { {}, JsonLiteral::OPEN_LIST_BRACE, ++position };
-                case ']': return { {}, JsonLiteral::CLOSED_LIST_BRACE, ++position };
-                case ':': return { {}, JsonLiteral::COLON, ++position };
-                case ',': return { {}, JsonLiteral::COMMA, ++position };
-                case 't': case 'f': case 'n': return lexKeyword(rawJson, position);
+                case '9': return lexInteger(rawJson);
+                case '{': return { {}, JsonLiteral::OPEN_CURLY_BRACE, ++position_ };
+                case '}': return { {}, JsonLiteral::CLOSED_CURLY_BRACE, ++position_ };
+                case '[': return { {}, JsonLiteral::OPEN_LIST_BRACE, ++position_ };
+                case ']': return { {}, JsonLiteral::CLOSED_LIST_BRACE, ++position_ };
+                case ':': return { {}, JsonLiteral::COLON, ++position_ };
+                case ',': return { {}, JsonLiteral::COMMA, ++position_ };
+                case 't': case 'f': case 'n': return lexKeyword(rawJson);
             }
-            return { {}, JsonLiteral::NIL, position };
+            return { {}, JsonLiteral::NIL, position_ };
         }
+
+        std::size_t position_ {0};
     };
 }
 

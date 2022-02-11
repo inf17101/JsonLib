@@ -17,15 +17,8 @@ namespace json
     public:
         std::tuple<Json, std::string> parse(const std::string& rawJson, JsonLexer lexer)
         {
-            //Lexer lexer{};
             auto tokens = lexer(rawJson);
             auto [json, _, error] = parse(tokens);
-            /*std::size_t i {0};
-            for(const auto& t : tokens)
-            {
-                std::cout << i << ": " << JsonLiteralToString(t.type_) << std::endl;
-                i++;
-            }*/
             return { json, error };
         }
 
