@@ -34,6 +34,8 @@ namespace json
             case JsonLiteral::INTEGER: return "INTEGER";
             case JsonLiteral::STRING: return "STRING";
             case JsonLiteral::BOOLEAN: return "BOOLEAN";
+            case JsonLiteral::OBJECT: return "OBJECT";
+            case JsonLiteral::ARRAY: return "ARRAY";
             case JsonLiteral::NIL: return "NIL";
             case JsonLiteral::JSON_EOF: return "JSON_EOF";
             case JsonLiteral::ERROR: return "ERROR";
