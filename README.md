@@ -51,7 +51,7 @@ int main()
 
     Lexer lexer{};
     Parser<Lexer> parser{};
-    auto [json, error] = parser.parse(jsonExample, lexer);
+    auto [json, error] = parser.parse(jsonExample);
     if(notEmpty(error))
         std::cout << error << std::endl;
     return 0;
