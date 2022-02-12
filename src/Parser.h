@@ -26,8 +26,8 @@ namespace json
         bool isSyntaxLiteral(const JsonLiteral literal)
         {
             return literal == JsonLiteral::OPEN_CURLY_BRACE || literal == JsonLiteral::CLOSED_CURLY_BRACE
-                || literal == JsonLiteral::COLON || literal == JsonLiteral::COMMA || literal == JsonLiteral::COMMA
-                || literal == JsonLiteral::OPEN_LIST_BRACE || literal == JsonLiteral::CLOSED_LIST_BRACE;
+                || literal == JsonLiteral::COLON || literal == JsonLiteral::COMMA || literal == JsonLiteral::OPEN_LIST_BRACE 
+                || literal == JsonLiteral::CLOSED_LIST_BRACE;
         }
 
         std::tuple<std::vector<Json>, std::size_t, std::string> 
