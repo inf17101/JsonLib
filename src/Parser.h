@@ -15,9 +15,9 @@ namespace json
     class Parser
     {
     public:
-        std::tuple<Json, std::string> parse(const std::string& rawJson, JsonLexer lexer)
+        std::tuple<Json, std::string> parse(const std::string& rawJson)
         {
-            auto tokens = lexer(rawJson);
+            auto tokens = JsonLexer{}(rawJson);
             auto [json, _, error] = parse(tokens);
             return { json, error };
         }
