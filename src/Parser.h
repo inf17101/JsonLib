@@ -23,7 +23,7 @@ namespace json
         }
 
     private:
-        bool isSyntaxLiteral(const JsonLiteral literal)
+        inline bool isSyntaxLiteral(const JsonLiteral literal)
         {
             return literal == JsonLiteral::OPEN_CURLY_BRACE || literal == JsonLiteral::CLOSED_CURLY_BRACE
                 || literal == JsonLiteral::COLON || literal == JsonLiteral::COMMA || literal == JsonLiteral::OPEN_LIST_BRACE 
