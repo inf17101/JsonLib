@@ -63,7 +63,7 @@ namespace json
             }
 
         std::tuple<std::map<std::string, Json>, std::size_t, std::string>
-            parseJsonObject(const std::vector<Token> tokens, std::size_t index)
+            parseJsonObject(const std::vector<Token>& tokens, std::size_t index)
             {
                 std::map<std::string, Json> values = {};
                 auto amountOfTokens { tokens.size() };
