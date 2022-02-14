@@ -16,7 +16,7 @@ namespace json
         {
             auto token = lex(rawJson);
             std::vector<Token> tokens { token };
-            while(token.type_ != JsonLiteral::JSON_EOF)
+            while(notEndOfJson(token.type_))
             {
                 token = lex(rawJson);
                 tokens.push_back(token);
@@ -26,12 +26,17 @@ namespace json
         }
 
     private:
-        bool isEndOfJson(const std::string& rawJson) const noexcept
+        inline bool notEndOfJson(const JsonLiteral literal) const noexcept
+        {
+            return literal != JsonLiteral::JSON_EOF;
+        }
+        
+        inline bool isEndOfJson(const std::string& rawJson) const noexcept
         {
             return position_ >= rawJson.length();
         }
 
-        bool notEndOfJson(const std::string& rawJson) const noexcept
+        inline bool notEndOfJson(const std::string& rawJson) const noexcept
         {
             return position_ < rawJson.length();
         }
