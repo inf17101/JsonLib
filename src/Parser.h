@@ -17,8 +17,8 @@ namespace json
     public:
         std::tuple<Json, std::string> parse(const std::string& rawJson)
         {
-            auto tokens = JsonLexer{}(rawJson);
-            auto [json, _, error] = parse(tokens);
+            tokens_ = JsonLexer{}(rawJson);
+            auto [json, _, error] = parse();
             return { json, error };
         }
 
@@ -31,20 +31,20 @@ namespace json
         }
 
         std::tuple<std::vector<Json>, std::size_t, std::string> 
-            parseJsonArray(const std::vector<Token>& tokens, std::size_t index)
+            parseJsonArray(std::size_t index)
             {
                 std::vector<Json> children;
-                auto amountOfTokens { tokens.size() };
-                while(index < amountOfTokens)
+                auto amountOftokens_ { tokens_.size() };
+                while(index < amountOftokens_)
                 {
-                    auto token = tokens[index];
+                    auto token = tokens_[index];
                     if(isSyntaxLiteral(token.type_))
                     {
                         if(token.type_ == JsonLiteral::CLOSED_LIST_BRACE)
                             return {children, index + 1, {}};
                         if(token.type_ == JsonLiteral::COMMA)
                         {
-                            token = tokens[index];
+                            token = tokens_[index];
                             index++;
                         }else if(notEmpty(children))
                         {
@@ -52,7 +52,7 @@ namespace json
                         }
                     }
 
-                    auto [child, newIndex, error] = parse(tokens, index);
+                    auto [child, newIndex, error] = parse(index);
                     if(notEmpty(error))
                         return { {}, index, error };
                     
@@ -63,13 +63,13 @@ namespace json
             }
 
         std::tuple<std::map<std::string, Json>, std::size_t, std::string>
-            parseJsonObject(const std::vector<Token>& tokens, std::size_t index)
+            parseJsonObject(std::size_t index)
             {
                 std::map<std::string, Json> values = {};
-                auto amountOfTokens { tokens.size() };
-                while(index < amountOfTokens)
+                auto amountOftokens_ { tokens_.size() };
+                while(index < amountOftokens_)
                 {
-                    auto token = tokens[index];
+                    auto token = tokens_[index];
                     if(isSyntaxLiteral(token.type_))
                     {
                         if(token.type_ == JsonLiteral::CLOSED_CURLY_BRACE)
@@ -78,7 +78,7 @@ namespace json
                         if(token.type_ == JsonLiteral::COMMA)
                         {
                             index++;
-                            token = tokens[index];
+                            token = tokens_[index];
                         }else if(notEmpty(values))
                         {
                             return { {}, index, "Expected comma after element in object." };
@@ -88,7 +88,7 @@ namespace json
                         }
                     }
 
-                    auto [key, newIndex, error] = parse(tokens, index);
+                    auto [key, newIndex, error] = parse(index);
                     if(notEmpty(error))
                         return { {}, index, error };
                     
@@ -96,14 +96,14 @@ namespace json
                         return { {}, index, "Expected string key in object." };
                     
                     index = newIndex;
-                    token = tokens[index];
+                    token = tokens_[index];
 
                     if(token.type_ != JsonLiteral::COLON)
                         return { {}, index, "Expected colon after key in object." };
                     
                     index++;
-                    token = tokens[index];
-                    auto [value, newIndex1, error1] = parse(tokens, index);
+                    token = tokens_[index];
+                    auto [value, newIndex1, error1] = parse(index);
                     if(notEmpty(error1))
                         return { {}, index, error1 };
                     values[key.string_.value()] = std::move(value);
@@ -113,9 +113,9 @@ namespace json
             }
 
         std::tuple<Json, std::size_t, std::string> 
-            parse(const std::vector<Token>& tokens, std::size_t index = 0)
+            parse(std::size_t index = 0)
             {
-                auto token = tokens[index];
+                auto token = tokens_[index];
                 switch (token.type_)
                 {
                     case JsonLiteral::INTEGER: return { Json{ .integer_ = std::stoi(token.content_), 
@@ -125,11 +125,11 @@ namespace json
                     case JsonLiteral::BOOLEAN: return { Json{.boolean_ = token.content_ == "true",
                                                         .type_ = JsonLiteral::BOOLEAN }, index + 1, {} };
                     case JsonLiteral::OPEN_LIST_BRACE: {
-                        auto [array, newIndex, error] = parseJsonArray(tokens, index + 1);
+                        auto [array, newIndex, error] = parseJsonArray(index + 1);
                         return {Json{.array_ = array, .type_ = JsonLiteral::ARRAY}, newIndex, error};
                     }
                     case JsonLiteral::OPEN_CURLY_BRACE: {
-                        auto [object, newIndex, error] = parseJsonObject(tokens, index + 1);
+                        auto [object, newIndex, error] = parseJsonObject(index + 1);
                         return { Json{.object_ = std::optional(object), .type_ = JsonLiteral::OBJECT}, newIndex, error };
                     }
                     case JsonLiteral::NIL: return { Json{ .string_ = token.content_, 
@@ -138,6 +138,8 @@ namespace json
                 }
                 return {{}, index, "Failed to parse."};
             }
+    private:
+        std::vector<Token> tokens_;
     };
 }
 
