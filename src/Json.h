@@ -18,28 +18,38 @@ namespace json
 
     void print() const noexcept
     {
-        if(string_)
+        if (string_)
         {
-            std::cout << *string_ << std::endl;
+            std::cout << *string_;
         }
-        else if(boolean_)
+        else if (boolean_)
         {
             std::cout << std::boolalpha;
-            std::cout << *boolean_ << std::endl;
-        }else if(integer_)
-        {
-            std::cout << *integer_ << std::endl;
+            std::cout << *boolean_;
         }
-
-        for(const auto& item : array_.value_or(std::vector<Json> {}))
+        else if (integer_)
         {
-            item.print();
+            std::cout << *integer_;
         }
-
-        for(const auto& [key, value] : object_.value_or(std::map<std::string, Json> {}))
+        else if (array_)
         {
-            std::cout << key << ": ";
-            value.print();
+            std::cout << "[";
+            auto printArray = [](const auto& item) { item.print(); std::cout << ','; };
+            std::for_each(begin(*array_), --end(*array_), printArray);
+            decltype(auto) endIt = (*array_).back();
+            endIt.print();
+            std::cout << "]" << std::endl;
+        }
+        else if (object_)
+        {
+            std::cout << "{" << std::endl;
+            auto printObject = [](const auto& item) { std::cout << item.first << ": "; item.second.print(); std::cout << ',' << std::endl; };
+            std::for_each(begin(*object_), --end(*object_), printObject);
+            auto endIt = std::prev(end(*object_));
+            std::cout << endIt->first << ": ";
+            endIt->second.print();
+            std::cout << std::endl;
+            std::cout << "}" << std::endl;
         }
     }
     };
