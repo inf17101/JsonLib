@@ -1,145 +1,143 @@
-#ifndef __PARSER_HEADER__
-#define __PARSER_HEADER__
+#ifndef __LEXER_HEADER__
+#define __LEXER_HEADER__
 
+#include <cstdint>
+#include <string>
 #include <vector>
-#include <map>
-#include "Tools.h"
 #include "Token.h"
-#include "Lexer.h"
 #include "JsonLiteral.h"
-#include "Json.h"
 
 namespace json
 {
-    template<typename JsonLexer>
-    class Parser
+    class Lexer
     {
     public:
-        std::tuple<Json, std::string> parse(const std::string& rawJson)
+        auto operator()(const std::string& rawJson) noexcept
         {
-            tokens_ = JsonLexer{}(rawJson);
-            auto [json, _, error] = parse();
-            return { json, error };
+            auto token = lex(rawJson);
+            std::vector<Token> tokens { token };
+            while(notEndOfJson(token.type_))
+            {
+                token = lex(rawJson);
+                tokens.push_back(token);
+            }
+
+            return tokens;
         }
 
     private:
-        inline bool isSyntaxLiteral(const JsonLiteral literal)
+        inline bool notEndOfJson(const JsonLiteral literal) const noexcept
         {
-            return literal == JsonLiteral::OPEN_CURLY_BRACE || literal == JsonLiteral::CLOSED_CURLY_BRACE
-                || literal == JsonLiteral::COLON || literal == JsonLiteral::COMMA || literal == JsonLiteral::OPEN_LIST_BRACE 
-                || literal == JsonLiteral::CLOSED_LIST_BRACE;
+            return literal != JsonLiteral::JSON_EOF;
+        }
+        
+        inline bool isEndOfJson(const std::string& rawJson) const noexcept
+        {
+            return position_ >= rawJson.length();
         }
 
-        std::tuple<std::vector<Json>, std::size_t, std::string> parseJsonArray()
+        inline bool notEndOfJson(const std::string& rawJson) const noexcept
         {
-            std::vector<Json> children;
-            auto amountOfTokens { tokens_.size() };
-            while(index_ < amountOfTokens)
+            return position_ < rawJson.length();
+        }
+
+        void skipSpaces(const std::string& rawJson)
+        {
+            while(std::isspace(rawJson[position_]) > 0 && notEndOfJson(rawJson))
+                position_++;
+        }
+
+        Token lexString(const std::string& rawJson)
+        {
+            std::string buffer {};
+            while(rawJson[position_] != '"' && notEndOfJson(rawJson))
             {
-                auto token = tokens_[index_];
-                if(isSyntaxLiteral(token.type_))
+                buffer += rawJson[position_];
+                position_++;
+            }
+            position_++;
+            return { buffer, JsonLiteral::STRING, position_ };
+        }
+
+        Token lexInteger(const std::string& rawJson)
+        {
+            std::string number {};
+            while (std::isdigit(rawJson[position_]) > 0)
+            {
+                number += rawJson[position_];
+                position_++;
+            }
+            return { number, JsonLiteral::INTEGER, position_ }; 
+        }
+
+        inline bool isBooleanKeyword(const std::string& keyword) const noexcept
+        {
+            return keyword == "true" || keyword == "false";
+        }
+
+        inline bool isNullKeyword(const std::string& keyword) const noexcept
+        {
+            return keyword == "null";   
+        }
+
+        Token checkKeyword(const std::string& keyword) const noexcept
+        {
+            if(isBooleanKeyword(keyword))
+                return { keyword, JsonLiteral::BOOLEAN, position_};
+            else if(isNullKeyword(keyword))
+                return { keyword, JsonLiteral::NIL, position_};
+
+            return { {}, JsonLiteral::ERROR, position_};
+        }
+
+        inline bool notKeywordEnd(char indicator) const noexcept
+        {
+            return indicator != ',' && indicator != '}' && indicator != ']' && !std::isspace(indicator);
+        }
+
+        inline bool isKeyword(char indicator) const noexcept
+        {
+            return indicator == 't' || indicator == 'f' || indicator == 'n';
+        }
+
+        auto lexKeyword(const std::string& rawJson)
+        {
+            std::string keyword {};
+            if(isKeyword(rawJson[position_]))
+            {
+                while(notKeywordEnd(rawJson[position_]) && notEndOfJson(rawJson))
                 {
-                    if(token.type_ == JsonLiteral::CLOSED_LIST_BRACE)
-                        return {children, ++index_, {}};
-                    if(token.type_ == JsonLiteral::COMMA)
-                    {
-                        token = tokens_[index_];
-                        index_++;
-                    }else if(notEmpty(children))
-                    {
-                        return { {}, index_, "Expected a comma between Json Array elements." };
-                    }
+                    keyword += rawJson[position_];
+                    position_++;
                 }
-
-                auto [child, newIndex, error] = parse();
-                if(notEmpty(error))
-                    return { {}, index_, error };
-                
-                children.push_back(std::move(child));
-                index_ = newIndex;
             }
-            return { {}, index_, "Unexpected EOF while parsing array" };
+            return checkKeyword(keyword);
         }
 
-        std::tuple<std::map<std::string, Json>, std::size_t, std::string> parseJsonObject()
+        Token lex(const std::string& rawJson)
         {
-            std::map<std::string, Json> values = {};
-            auto amountOfTokens { tokens_.size() };
-            while(index_ < amountOfTokens)
+            skipSpaces(rawJson);
+            if(isEndOfJson(rawJson))
+                return Token{ {}, JsonLiteral::JSON_EOF, position_ };
+
+            switch(rawJson[position_])
             {
-                auto token = tokens_[index_];
-                if(isSyntaxLiteral(token.type_))
-                {
-                    if(token.type_ == JsonLiteral::CLOSED_CURLY_BRACE)
-                        return { values, ++index_, {} };
-
-                    if(token.type_ == JsonLiteral::COMMA)
-                    {
-                        index_++;
-                        token = tokens_[index_];
-                    }else if(notEmpty(values))
-                    {
-                        return { {}, index_, "Expected comma after element in object." };
-                    }else
-                    {
-                        return { {}, index_, "Expected key-value pair or closing brace in object." };
-                    }
-                }
-
-                auto [key, newIndex, error] = parse();
-                if(notEmpty(error))
-                    return { {}, index_, error };
-                
-                if(key.type_ != JsonLiteral::STRING)
-                    return { {}, index_, "Expected string key in object." };
-                
-                index_ = newIndex;
-                token = tokens_[index_];
-
-                if(token.type_ != JsonLiteral::COLON)
-                    return { {}, index_, "Expected colon after key in object." };
-                
-                index_++;
-                token = tokens_[index_];
-                auto [value, newIndex1, error1] = parse();
-                if(notEmpty(error1))
-                    return { {}, index_, error1 };
-                values[key.string_.value()] = std::move(value);
-                index_ = newIndex1;
+                case '"': position_++; return lexString(rawJson);
+                case '0': case '1': case '2': case '3': case '4': 
+                case '5': case '6': case '7': case '8': 
+                case '9': return lexInteger(rawJson);
+                case '{': return { {}, JsonLiteral::OPEN_CURLY_BRACE, ++position_ };
+                case '}': return { {}, JsonLiteral::CLOSED_CURLY_BRACE, ++position_ };
+                case '[': return { {}, JsonLiteral::OPEN_LIST_BRACE, ++position_ };
+                case ']': return { {}, JsonLiteral::CLOSED_LIST_BRACE, ++position_ };
+                case ':': return { {}, JsonLiteral::COLON, ++position_ };
+                case ',': return { {}, JsonLiteral::COMMA, ++position_ };
+                case 't': case 'f': case 'n': return lexKeyword(rawJson);
             }
-            return { {}, ++index_, "" };
+            return { {}, JsonLiteral::NIL, position_ };
         }
 
-        std::tuple<Json, std::size_t, std::string> parse()
-        {
-            auto token = tokens_[index_];
-            switch (token.type_)
-            {
-                case JsonLiteral::INTEGER: return { Json{ .integer_ = std::stoi(token.content_), 
-                                                .type_ = JsonLiteral::INTEGER }, ++index_, {} };
-                case JsonLiteral::STRING: return { Json{ .string_ = token.content_, 
-                                                .type_ = JsonLiteral::STRING }, ++index_, {} };
-                case JsonLiteral::BOOLEAN: return { Json{.boolean_ = token.content_ == "true",
-                                                    .type_ = JsonLiteral::BOOLEAN }, ++index_, {} };
-                case JsonLiteral::OPEN_LIST_BRACE: {
-                    index_++;
-                    auto [array, newIndex, error] = parseJsonArray();
-                    return {Json{.array_ = array, .type_ = JsonLiteral::ARRAY}, newIndex, error};
-                }
-                case JsonLiteral::OPEN_CURLY_BRACE: {
-                    index_++;
-                    auto [object, newIndex, error] = parseJsonObject();
-                    return { Json{.object_ = std::optional(object), .type_ = JsonLiteral::OBJECT}, newIndex, error };
-                }
-                case JsonLiteral::NIL: return { Json{ .string_ = token.content_, 
-                                                .type_ = JsonLiteral::NIL }, ++index_, {} };
-                default: return { {}, index_, "generic parsing error. the given type is not supported." };
-            }
-            return {{}, index_, "Failed to parse."};
-        }
-    private:
-        std::vector<Token> tokens_;
-        std::size_t index_{0};
+        std::size_t position_ {0};
     };
 }
 
