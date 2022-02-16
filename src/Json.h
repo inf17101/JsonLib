@@ -1,9 +1,11 @@
 #ifndef __JSON_HEADER__
 #define __JSON_HEADER__
 
+#include <iostream>
 #include <vector>
 #include <optional>
 #include <map>
+#include <algorithm>
 #include "JsonLiteral.h"
 
 namespace json
