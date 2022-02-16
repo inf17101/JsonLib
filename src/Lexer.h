@@ -16,7 +16,7 @@ namespace json
         {
             auto token = lex(rawJson);
             std::vector<Token> tokens { token };
-            while(notEndOfJson(token.type_))
+            while(notEndOfJson(token.type_) && notError(token.type_))
             {
                 token = lex(rawJson);
                 tokens.push_back(token);
@@ -39,6 +39,11 @@ namespace json
         inline bool notEndOfJson(const std::string& rawJson) const noexcept
         {
             return position_ < rawJson.length();
+        }
+
+        inline bool notError(const JsonLiteral literal) const noexcept
+        {
+            return literal != JsonLiteral::ERROR;
         }
 
         void skipSpaces(const std::string& rawJson)
@@ -133,8 +138,9 @@ namespace json
                 case ':': return { {}, JsonLiteral::COLON, ++position_ };
                 case ',': return { {}, JsonLiteral::COMMA, ++position_ };
                 case 't': case 'f': case 'n': return lexKeyword(rawJson);
+                default: return { {}, JsonLiteral::ERROR, position_ };
             }
-            return { {}, JsonLiteral::NIL, position_ };
+            return { {}, JsonLiteral::ERROR, position_ };
         }
 
         std::size_t position_ {0};
