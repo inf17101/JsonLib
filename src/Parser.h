@@ -33,8 +33,8 @@ namespace json
         std::tuple<std::vector<Json>, std::size_t, std::string> parseJsonArray()
         {
             std::vector<Json> children;
-            auto amountOftokens_ { tokens_.size() };
-            while(index_ < amountOftokens_)
+            auto amountOfTokens { tokens_.size() };
+            while(index_ < amountOfTokens)
             {
                 auto token = tokens_[index_];
                 if(isSyntaxLiteral(token.type_))
@@ -64,8 +64,8 @@ namespace json
         std::tuple<std::map<std::string, Json>, std::size_t, std::string> parseJsonObject()
         {
             std::map<std::string, Json> values = {};
-            auto amountOftokens_ { tokens_.size() };
-            while(index_ < amountOftokens_)
+            auto amountOfTokens { tokens_.size() };
+            while(index_ < amountOfTokens)
             {
                 auto token = tokens_[index_];
                 if(isSyntaxLiteral(token.type_))
