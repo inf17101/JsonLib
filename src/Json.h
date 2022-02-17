@@ -51,7 +51,7 @@ namespace json
                 item.print(spaceLevel); 
                 std::cout << ',' << std::endl; 
             };
-            decltype(auto) penultimateIt = std::prev(end(*array_));
+            auto penultimateIt = std::prev(end(*array_));
             std::for_each(begin(*array_), penultimateIt, printArray);
             printSpaces(spaceLevel);
             penultimateIt->print(spaceLevel);
