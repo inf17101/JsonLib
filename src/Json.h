@@ -60,7 +60,7 @@ namespace json
             std::cout << "]";
         }
 
-        void print(std::size_t spaceLevel) const noexcept
+        void print(const std::size_t spaceLevel = 0) const noexcept
         {
             if (string_)
             {
