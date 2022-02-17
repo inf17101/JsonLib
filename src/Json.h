@@ -25,7 +25,10 @@ namespace json
             ++spaceLevel;
             auto copySpaceLevel{spaceLevel};
             ++copySpaceLevel;
-            const auto printObject = [this, copySpaceLevel](const auto& item) { printSpaces(copySpaceLevel); std::cout << '\"' << item.first << '\"' << ": "; item.second.print(copySpaceLevel); std::cout << ',' << std::endl; };
+            const auto printObject = [this, copySpaceLevel](const auto& item) { 
+                printSpaces(copySpaceLevel);
+                std::cout << '\"' << item.first << '\"' << ": "; item.second.print(copySpaceLevel); std::cout << ',' << std::endl;
+            };
             auto endIt = std::prev(end(*object_));
             std::for_each(begin(*object_), endIt, printObject);
             printSpaces(copySpaceLevel);
@@ -45,7 +48,7 @@ namespace json
         void printJsonArray(std::size_t spaceLevel) const noexcept
         {
             std::cout << "[" << std::endl;
-            const auto printArray = [this, spaceLevel](const auto& item) mutable { printSpaces(spaceLevel); item.print(spaceLevel); std::cout << ',' << std::endl; };
+            const auto printArray = [this, spaceLevel](const auto& item) { printSpaces(spaceLevel); item.print(spaceLevel); std::cout << ',' << std::endl; };
             std::for_each(begin(*array_), std::prev(end(*array_)), printArray);
             decltype(auto) endIt = (*array_).back();
             printSpaces(spaceLevel);
