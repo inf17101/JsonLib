@@ -100,12 +100,12 @@ g++ -Wall -g -std=c++17 main.cpp
 
 Every tests of a class is separated into an own file inside the tests folder.<br>
 Feel free to add more unittests to an existing test file or extend the test collection with new files for other classes of the library.<br>
-If you want to new tests for a class just add a new file called `Test<class_name>.cpp` inside the `tests` folder and define the unittests there.<br>
+If you want to add new tests for a class just add a new file called `Test<class_name>.cpp` inside the `tests` folder and define the unittests there.<br>
 Simply include the new unittest file inside the `runalltests.cpp` file.<br>
 
 You can compile and run the tests with the following commands:<br>
 ```
-g++ -o run_tests -I/home/nea/Cpp/JsonLib/src/ -std=c++17 -Wall -g -pthread runalltests.cpp -lgtest
+g++ -o run_tests -I/home/ubuntu/JsonLib/src/ -std=c++17 -Wall -g -pthread runalltests.cpp -lgtest
 ./run_tests
 ```
 
